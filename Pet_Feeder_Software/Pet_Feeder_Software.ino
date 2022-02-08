@@ -1,6 +1,7 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include "BluetoothSerial.h"
 
 // Define Constants
 
@@ -10,6 +11,11 @@
 #define SCREEN_ADDRESS 0x3C ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
+
+//Bluetooth Settings
+BluetoothSerial ESP32_Pet_Feeder;
+String BT_DataReceived = " ";
+
 // Connections to A4988
 const int dirPin = 33;  // Direction
 const int stepPin = 32; // Step
@@ -18,7 +24,11 @@ const int stepPin = 32; // Step
 const int STEPS_PER_REV = 200;
  
 void setup() {
-    Serial.begin(9600);
+   Serial.begin(19200);
+
+   ESP32_Pet_Feeder.begin("ESP32_Control");
+  
+
 
   // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
   if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
@@ -91,42 +101,61 @@ void testfillroundrect(void) {
   }
 }
 void loop() {
-  
-  // Set motor direction clockwise
+
+   // Set motor direction clockwise
   digitalWrite(dirPin,HIGH); 
-
-  testdrawroundrect();
-  testfillroundrect();
   
-  // Spin motor one rotation slowly
-  for(int x = 0; x < STEPS_PER_REV; x++) {
-    digitalWrite(stepPin,HIGH); 
-    delayMicroseconds(2000); 
-    digitalWrite(stepPin,LOW); 
-    delayMicroseconds(2000); 
+  if(ESP32_Pet_Feeder.available())
+  {
+    BT_DataReceived=ESP32_Pet_Feeder.read();
+    Serial.println(BT_DataReceived);
+    if(BT_DataReceived == "Manual")
+    {
+       display.clearDisplay();
+      for(int x = 0; x < 200; x++) {
+      digitalWrite(stepPin,HIGH); 
+      delayMicroseconds(100); 
+      digitalWrite(stepPin,LOW); 
+      delayMicroseconds(100); 
+      }
+    }
+//    else
+//    {
+//      testdrawroundrect();
+//      testfillroundrect();
+//  
+//      // Spin motor one rotation slowly
+//    for(int x = 0; x < STEPS_PER_REV; x++) 
+//      {
+//        digitalWrite(stepPin,HIGH); 
+//        delayMicroseconds(3000); 
+//        digitalWrite(stepPin,LOW); 
+//        delayMicroseconds(3000); 
+//      }
+//     // Pause for one second
+//     delay(1000); 
+//
+//     testdrawtriangle(); 
+//     testfilltriangle();
+//  
+//     // Set motor direction counterclockwise
+//     digitalWrite(dirPin,LOW);
+//  
+//     // Spin motor two rotations quickly
+//     for(int x = 0; x < (STEPS_PER_REV * 2); x++) 
+//     {
+//        digitalWrite(stepPin,HIGH);
+//        delayMicroseconds(3000);
+//        digitalWrite(stepPin,LOW);
+//        delayMicroseconds(1000);
+//     }
+//  
+//     // Pause for one second
+//     delay(1000);
+//     display.clearDisplay();
+//
+//     // Pause for two second
+//     delay(2000); 
+//   }
   }
-  
-  // Pause for one second
-  delay(1000); 
-
-  testdrawtriangle(); 
-  testfilltriangle();
-  
-  // Set motor direction counterclockwise
-  digitalWrite(dirPin,LOW);
-  
-  // Spin motor two rotations quickly
-  for(int x = 0; x < (STEPS_PER_REV * 2); x++) {
-    digitalWrite(stepPin,HIGH);
-    delayMicroseconds(1000);
-    digitalWrite(stepPin,LOW);
-    delayMicroseconds(1000);
-  }
-  
-  // Pause for one second
-  delay(1000);
-  display.clearDisplay();
-
-  // Pause for two second
-  delay(2000);
-}
+ }
