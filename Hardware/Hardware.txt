@@ -1,0 +1,6 @@
+-ESP32
+-Stepper Motor (A4988 Driver)
+-OLED Display (I2C com)
+-12V Jack (Power Up) + Switch
+-Train Button
+-Weight Sensor TBD ???

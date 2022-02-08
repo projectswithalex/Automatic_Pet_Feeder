@@ -1,0 +1,19 @@
+ESP32 Pins
+I2C Display
+GPIO 21 - SDA 
+GPIO 22 - SCL
+
+A4988
+GPIO 33 - DIR
+GPIO 32 - STEP
+GPIO 14 - MS1
+GPI0 12 - MS2
+GPIO 13 - MS3
+
+Train Button
+GPIO - 35
+
+
+Weight Sensor + HX711
+GPIO16 - DT
+GPIO17 - SCK
