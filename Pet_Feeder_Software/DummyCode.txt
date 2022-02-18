@@ -1,8 +1,9 @@
+#include <Arduino.h>
 #include <Wire.h>
+#include <TimeLib.h>
+#include "BluetoothSerial.h"
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-#include "BluetoothSerial.h"
-
 // Define Constants
 
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
@@ -14,15 +15,16 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 //Bluetooth Settings
 BluetoothSerial ESP32_Pet_Feeder;
-String BT_DataReceived = " ";
-
+int BT_DATA = 0;
 // Connections to A4988
 const int dirPin = 33;  // Direction
 const int stepPin = 32; // Step
 
 // Motor steps per rotation
 const int STEPS_PER_REV = 200;
- 
+
+char BluetoothBuffer[50]={0}; 
+int BL_bufferCounter=0;
 void setup() {
    Serial.begin(19200);
 
@@ -100,62 +102,46 @@ void testfillroundrect(void) {
     delay(1);
   }
 }
-void loop() {
 
+
+void loop() {
+  int flag=0;
+  int transcomp=0;
+  int receive=0;
    // Set motor direction clockwise
   digitalWrite(dirPin,HIGH); 
   
-  if(ESP32_Pet_Feeder.available())
+  while(ESP32_Pet_Feeder.available())
   {
-    BT_DataReceived=ESP32_Pet_Feeder.read();
-    Serial.println(BT_DataReceived);
-    if(BT_DataReceived == "Manual")
-    {
-       display.clearDisplay();
-      for(int x = 0; x < 200; x++) {
-      digitalWrite(stepPin,HIGH); 
-      delayMicroseconds(100); 
-      digitalWrite(stepPin,LOW); 
-      delayMicroseconds(100); 
-      }
-    }
-//    else
-//    {
-//      testdrawroundrect();
-//      testfillroundrect();
-//  
-//      // Spin motor one rotation slowly
-//    for(int x = 0; x < STEPS_PER_REV; x++) 
-//      {
-//        digitalWrite(stepPin,HIGH); 
-//        delayMicroseconds(3000); 
-//        digitalWrite(stepPin,LOW); 
-//        delayMicroseconds(3000); 
-//      }
-//     // Pause for one second
-//     delay(1000); 
-//
-//     testdrawtriangle(); 
-//     testfilltriangle();
-//  
-//     // Set motor direction counterclockwise
-//     digitalWrite(dirPin,LOW);
-//  
-//     // Spin motor two rotations quickly
-//     for(int x = 0; x < (STEPS_PER_REV * 2); x++) 
-//     {
-//        digitalWrite(stepPin,HIGH);
-//        delayMicroseconds(3000);
-//        digitalWrite(stepPin,LOW);
-//        delayMicroseconds(1000);
-//     }
-//  
-//     // Pause for one second
-//     delay(1000);
-//     display.clearDisplay();
-//
-//     // Pause for two second
-//     delay(2000); 
-//   }
+    BT_DATA=ESP32_Pet_Feeder.read();
+    Serial.print("BT_DATA:");
+    Serial.println(BT_DATA);
+    BluetoothBuffer[BL_bufferCounter]=BT_DATA-0x30;
+    receive=BluetoothBuffer[BL_bufferCounter];
+    Serial.print("bt buffer:");
+    Serial.println(receive);
+    BL_bufferCounter++;
+    transcomp=1;
+    
   }
- }
+  if(transcomp==1){
+    Serial.println("transmission complete");
+    transcomp=0;
+  }
+  
+   if(BluetoothBuffer[0] == 0xFF)
+    {
+      display.clearDisplay();
+      testdrawtriangle();
+      testfilltriangle();
+      delayMicroseconds(100); 
+      flag=1;
+    }
+    
+    if(flag == 1)
+    {
+       
+       Serial.println("done");
+    }
+  BL_bufferCounter=0;
+}
